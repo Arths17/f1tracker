@@ -399,28 +399,6 @@ def load_race_data(race_id: int) -> Dict:
         return None
     finally:
         db.close()
-        if not race:
-            return None
-        
-        prediction = db.query(Prediction).filter(Prediction.race_id == race_id).first()
-        results = db.query(RaceResult).filter(RaceResult.race_id == race_id).all()
-        metrics = db.query(EvaluationMetric).filter(EvaluationMetric.race_id == race_id).first()
-        
-        prediction_entries = []
-        if prediction:
-            prediction_entries = db.query(PredictionEntry).filter(
-                PredictionEntry.prediction_id == prediction.id
-            ).order_by(PredictionEntry.predicted_position).all()
-        
-        return {
-            'race': race,
-            'prediction': prediction,
-            'prediction_entries': prediction_entries,
-            'results': results,
-            'metrics': metrics
-        }
-    finally:
-        db.close()
 
 def get_historical_stats() -> Dict:
     """Get historical statistics across all races."""
@@ -764,31 +742,31 @@ def main():
     st.markdown("**Production-Ready Race Prediction System** | FastF1 + XGBoost ML")
     st.markdown("---")
     
-         # Check if database has data
-         races = load_all_races()
-         if not races:
-              st.warning("⚠️ No race data found in database.")
-              st.info("""
-              **To get started:**
-        
-              1. **Generate predictions** using the backend API:
-                  ```bash
-                  python main.py --mode predict --year 2024 --race "Qatar"
-                  ```
-        
-              2. **Sync results** (after race completion):
-                  ```bash
-                  curl -X POST "http://localhost:8000/results/sync/2024/Qatar"
-                  ```
-        
-              3. **Run the app** again:
-                  ```bash
-                  streamlit run apps/streamlit/f1_tracker_app.py
-                  ```
-        
-              For more information, see the [F1 Tracker Guide](docs/F1_TRACKER_GUIDE.md).
-              """)
-              st.stop()
+    # Check if database has data
+    races = load_all_races()
+    if not races:
+        st.warning("⚠️ No race data found in database.")
+        st.info("""
+        **To get started:**
+
+        1. **Generate predictions** using the backend API:
+           ```bash
+           python main.py --mode predict --year 2024 --race "Qatar"
+           ```
+
+        2. **Sync results** (after race completion):
+           ```bash
+           curl -X POST "http://localhost:8000/results/sync/2024/Qatar"
+           ```
+
+        3. **Run the app** again:
+           ```bash
+           streamlit run apps/streamlit/f1_tracker_app.py
+           ```
+
+        For more information, see the [F1 Tracker Guide](docs/F1_TRACKER_GUIDE.md).
+        """)
+        st.stop()
     
     # =============================================================================
     # SIDEBAR - RACE SELECTION & SUMMARY STATS

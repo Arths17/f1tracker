@@ -36,9 +36,15 @@ from plotly.subplots import make_subplots
 
 # Database imports
 from sqlalchemy.orm import Session
-from app.database import SessionLocal, engine
+from app.database import SessionLocal, engine, Base
 from app import models
 from app.models import Race, Prediction, PredictionEntry, RaceResult, EvaluationMetric
+
+# Initialize database tables if they don't exist
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    st.error(f"Database initialization error: {e}")
 
 # FastF1 for schedule data
 try:
@@ -218,6 +224,9 @@ def load_all_races() -> List[Dict]:
             }
             for r in races
         ]
+    except Exception as e:
+        st.error(f"Error loading races: {e}")
+        return []
     finally:
         db.close()
 
@@ -356,6 +365,42 @@ def load_race_data(race_id: int) -> Dict:
         race = db.query(Race).filter(Race.id == race_id).first()
         if not race:
             return None
+            
+        prediction = db.query(Prediction).filter(
+            Prediction.race_id == race_id,
+            Prediction.status == 'frozen'
+        ).order_by(Prediction.created_at.desc()).first()
+        
+        prediction_entries = []
+        if prediction:
+            prediction_entries = db.query(PredictionEntry).filter(
+                PredictionEntry.prediction_id == prediction.id
+            ).order_by(PredictionEntry.predicted_position).all()
+        
+        results = db.query(RaceResult).filter(
+            RaceResult.race_id == race_id
+        ).order_by(RaceResult.position).all()
+        
+        metrics = None
+        if prediction:
+            metrics = db.query(EvaluationMetric).filter(
+                EvaluationMetric.prediction_id == prediction.id
+            ).first()
+        
+        return {
+            'race': race,
+            'prediction': prediction,
+            'prediction_entries': prediction_entries,
+            'results': results,
+            'metrics': metrics
+        }
+    except Exception as e:
+        st.error(f"Error loading race data: {e}")
+        return None
+    finally:
+        db.close()
+        if not race:
+            return None
         
         prediction = db.query(Prediction).filter(Prediction.race_id == race_id).first()
         results = db.query(RaceResult).filter(RaceResult.race_id == race_id).all()
@@ -400,6 +445,16 @@ def get_historical_stats() -> Dict:
             'avg_time_mae': avg_time_mae,
             'winner_accuracy': winner_accuracy * 100,
             'podium_accuracy': podium_accuracy * 100
+        }
+    except Exception as e:
+        # Return default values if database query fails
+        return {
+            'total_races': 0,
+            'total_predictions': 0,
+            'avg_position_mae': 0,
+            'avg_time_mae': 0,
+            'winner_accuracy': 0,
+            'podium_accuracy': 0
         }
     finally:
         db.close()
@@ -709,6 +764,32 @@ def main():
     st.markdown("**Production-Ready Race Prediction System** | FastF1 + XGBoost ML")
     st.markdown("---")
     
+         # Check if database has data
+         races = load_all_races()
+         if not races:
+              st.warning("⚠️ No race data found in database.")
+              st.info("""
+              **To get started:**
+        
+              1. **Generate predictions** using the backend API:
+                  ```bash
+                  python main.py --mode predict --year 2024 --race "Qatar"
+                  ```
+        
+              2. **Sync results** (after race completion):
+                  ```bash
+                  curl -X POST "http://localhost:8000/results/sync/2024/Qatar"
+                  ```
+        
+              3. **Run the app** again:
+                  ```bash
+                  streamlit run apps/streamlit/f1_tracker_app.py
+                  ```
+        
+              For more information, see the [F1 Tracker Guide](docs/F1_TRACKER_GUIDE.md).
+              """)
+              st.stop()
+    
     # =============================================================================
     # SIDEBAR - RACE SELECTION & SUMMARY STATS
     # =============================================================================
@@ -728,13 +809,6 @@ def main():
         """, unsafe_allow_html=True)
         
         st.header("📊 Race Selection")
-        
-        # Load all races
-        races = load_all_races()
-        
-        if not races:
-            st.error("No races found in database. Please run predictions first.")
-            st.stop()
         
         # Race selection dropdown
         race_options = {

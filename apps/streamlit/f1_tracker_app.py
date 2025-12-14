@@ -411,6 +411,7 @@ def seed_sample_data() -> None:
             ))
 
         db.add(EvaluationMetric(
+            race_id=race.id,
             prediction_id=prediction.id,
             position_mae=1.6,
             time_mae_seconds=8.4,

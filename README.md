@@ -63,10 +63,32 @@ pip install -r requirements.txt
 
 ### Running TRKR
 
+**Option 1: Quick Start (Recommended)**
 ```bash
+cd /Users/atharvranjan/f1predict
 source .venv/bin/activate
 streamlit run trkr/app.py
 ```
+
+**Option 2: From Any Directory**
+```bash
+source /Users/atharvranjan/f1predict/.venv/bin/activate
+streamlit run /Users/atharvranjan/f1predict/trkr/app.py
+```
+
+**Access the App:**
+- 🌐 Open http://localhost:8501 in your browser
+- 📡 Network access: http://192.168.12.21:8501
+
+**What Happens:**
+1. Streamlit initializes the app
+2. Database tables are created automatically
+3. FastF1 loads 2025 F1 season data (may take 10-30 seconds on first load)
+4. App displays 4 pages in sidebar navigation
+5. All data is cached for fast subsequent loads
+
+**To Stop the App:**
+Press `Ctrl+C` in the terminal
 
 Open **http://localhost:8501** in your browser.
 
@@ -277,6 +299,37 @@ python -c "from app.database import SessionLocal; db = SessionLocal(); print('�
 
 # Test FastF1
 python -c "from trkr.utils.live import load_season_schedule; print(f'✅ {len(load_season_schedule(2025))} races loaded')"
+```
+
+## 🐛 Troubleshooting
+
+### Issue: `streamlit: command not found`
+**Solution:** Make sure the virtual environment is activated
+```bash
+source .venv/bin/activate
+streamlit run trkr/app.py
+```
+
+### Issue: `ModuleNotFoundError: No module named 'streamlit'`
+**Solution:** Install dependencies
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Issue: Database errors or missing tables
+**Solution:** Reinitialize the database
+```bash
+python -c "from app.database import Base, engine; Base.metadata.create_all(bind=engine); print('✅ Database initialized')"
+```
+
+### Issue: Slow page loading (first time)
+**Solution:** This is normal! FastF1 is fetching data. Subsequent loads are cached and fast.
+
+### Issue: Port 8501 already in use
+**Solution:** Run on a different port
+```bash
+streamlit run trkr/app.py --server.port 8502
 ```
 
 ## 🤝 Contributing

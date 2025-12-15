@@ -108,14 +108,14 @@ def show():
                 entries_data = []
                 for entry in prediction.entries:
                     dnf_risk = metrics.calculate_dnf_probability(
-                        pd.Series({'gap_to_leader': entry.predicted_gap or 0})
-                    ) if entry.predicted_gap else 0
+                        pd.Series({'gap_to_leader': entry.gap or 0})
+                    ) if entry.gap else 0
                     
                     entries_data.append({
-                        'Position': entry.position or entry.predicted_position,
-                        'Driver': entry.driver_name or f"Driver {entry.driver_code}",
-                        'Gap (s)': f"{entry.predicted_gap:.2f}" if entry.predicted_gap else "N/A",
-                        'Uncertainty': f"±{entry.uncertainty:.2f}s" if entry.uncertainty else "N/A",
+                        'Position': entry.predicted_position,
+                        'Driver': entry.driver,
+                        'Gap (s)': f"{entry.gap:.2f}" if entry.gap else "N/A",
+                        'Team': entry.team or "Unknown",
                         'DNF Risk': f"{dnf_risk*100:.0f}%" if dnf_risk else "Low"
                     })
                 
@@ -155,24 +155,24 @@ def show():
                     p1 = podium[0] if len(podium) > 0 else None
                     st.metric(
                         "🥇 P1",
-                        p1.driver_name if p1 else "N/A",
-                        f"{p1.confidence*100:.0f}% confidence" if p1 and p1.confidence else "N/A"
+                        p1.driver if p1 else "N/A",
+                        f"Gap: {p1.gap:.1f}s" if p1 and p1.gap else "N/A"
                     )
                 
                 with col2:
                     p2 = podium[1] if len(podium) > 1 else None
                     st.metric(
                         "🥈 P2",
-                        p2.driver_name if p2 else "N/A",
-                        f"{p2.confidence*100:.0f}% confidence" if p2 and p2.confidence else "N/A"
+                        p2.driver if p2 else "N/A",
+                        f"Gap: {p2.gap:.1f}s" if p2 and p2.gap else "N/A"
                     )
                 
                 with col3:
                     p3 = podium[2] if len(podium) > 2 else None
                     st.metric(
                         "🥉 P3",
-                        p3.driver_name if p3 else "N/A",
-                        f"{p3.confidence*100:.0f}% confidence" if p3 and p3.confidence else "N/A"
+                        p3.driver if p3 else "N/A",
+                        f"Gap: {p3.gap:.1f}s" if p3 and p3.gap else "N/A"
                     )
             
             st.divider()

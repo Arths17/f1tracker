@@ -50,7 +50,7 @@ def show():
         pred_data = [
             {
                 'id': p.id,
-                'race': f"R{p.race.round_number} - {p.race.race_name}" if p.race else f"Race {p.race_id}",
+                'race': f"R{p.race.round} - {p.race.name}" if p.race and p.race.round else f"Race {p.race_id}",
                 'race_id': p.race_id,
                 'confidence': p.confidence_score or 0.5,
                 'feature_coverage': p.feature_coverage or 0.75

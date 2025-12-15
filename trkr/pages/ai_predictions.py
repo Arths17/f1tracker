@@ -207,8 +207,8 @@ def show():
                     st.metric("Podium Accuracy", podium_accuracy)
                 
                 with col4:
-                    skill = f"{eval_metrics.skill_score:.0f}/100" if eval_metrics.skill_score else "N/A"
-                    st.metric("Skill Score", skill)
+                    conf_metric = f"{eval_metrics.confidence_score*100:.0f}%" if eval_metrics.confidence_score else "N/A"
+                    st.metric("Confidence Score", conf_metric)
             else:
                 st.info("Race not yet completed. Accuracy metrics will appear after the race.")
             

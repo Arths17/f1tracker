@@ -74,12 +74,20 @@ def show():
         
         if selected_race:
             prediction = predictions[pred_df[pred_df['race'] == selected_race].index[0]]
+
+            # Normalize confidence (handles 0-1 or 0-100 inputs and clamps to [0,1])
+            def normalize_conf(raw_conf: float | None, fallback: float = 0.5) -> float:
+                if raw_conf is None:
+                    return fallback
+                conf = raw_conf / 100.0 if raw_conf > 1 else raw_conf
+                return max(0.0, min(conf, 1.0))
+            norm_conf = normalize_conf(prediction.confidence_score)
             
             # ========== CONFIDENCE GAUGE ==========
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                confidence = prediction.confidence_score or 0.5
+                confidence = norm_conf
                 level = "HIGH" if confidence > 0.75 else "MEDIUM" if confidence > 0.5 else "LOW"
                 
                 fig = visuals.prediction_confidence_gauge(confidence, level)
@@ -106,8 +114,7 @@ def show():
             
             if prediction.entries:
                 entries_data = []
-                confidence = prediction.confidence_score or 0.5
-                confidence_pct = confidence * 100 if confidence <= 1 else confidence
+                confidence_pct = norm_conf * 100
                 for entry in prediction.entries:
                     dnf_risk = metrics.calculate_dnf_probability(
                         entry.gap or 0,
@@ -189,6 +196,7 @@ def show():
             ).first()
             
             if eval_metrics:
+                metrics_conf = normalize_conf(eval_metrics.confidence_score, fallback=norm_conf)
                 col1, col2, col3, col4 = st.columns(4)
                 
                 with col1:
@@ -207,7 +215,7 @@ def show():
                     st.metric("Podium Accuracy", podium_accuracy)
                 
                 with col4:
-                    conf_metric = f"{eval_metrics.confidence_score*100:.0f}%" if eval_metrics.confidence_score else "N/A"
+                    conf_metric = f"{metrics_conf*100:.0f}%" if metrics_conf is not None else "N/A"
                     st.metric("Confidence Score", conf_metric)
             else:
                 st.info("Race not yet completed. Accuracy metrics will appear after the race.")
@@ -215,7 +223,7 @@ def show():
             # ========== DETAILED ANALYSIS ==========
             with st.expander("📈 Detailed Performance Analysis"):
                 st.write("**Model Characteristics:**")
-                st.write(f"- Confidence: {(prediction.confidence_score or 0.5)*100:.0f}%")
+                st.write(f"- Confidence: {norm_conf*100:.0f}%")
                 st.write(f"- Feature Coverage: {(prediction.feature_coverage or 0.75)*100:.0f}%")
                 st.write(f"- Predictions Made: {len(prediction.entries)} drivers")
                 

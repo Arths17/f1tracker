@@ -121,11 +121,12 @@ def leaderboard_chart(results_df: pd.DataFrame, title: str = "Leaderboard") -> g
     if results_df.empty:
         return go.Figure().add_annotation(text="No results available")
     
-    fig = px.barh(
+    fig = px.bar(
         results_df.sort_values("Points", ascending=True),
         x="Points",
         y="Driver",
         color="Team",
+        orientation="h",
         title=title,
         labels={"Points": "Points Earned"},
         height=600

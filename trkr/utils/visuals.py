@@ -15,7 +15,7 @@ def position_gap_chart(laps_df: pd.DataFrame, race_name: str = "Race") -> go.Fig
     Create a position-gap chart showing how driver gaps change over laps.
     
     Args:
-        laps_df: DataFrame with columns [lap, driver, gap_to_leader]
+        laps_df: DataFrame with FastF1 columns [Driver, LapNumber, GapToLeader, etc.]
         race_name: Name of the race for title
     
     Returns:
@@ -24,8 +24,21 @@ def position_gap_chart(laps_df: pd.DataFrame, race_name: str = "Race") -> go.Fig
     if laps_df.empty:
         return go.Figure().add_annotation(text="No data available")
     
+    # Handle both naming conventions (FastF1 PascalCase and custom lowercase)
+    df = laps_df.copy()
+    if 'LapNumber' in df.columns:
+        df = df.rename(columns={
+            'LapNumber': 'lap',
+            'Driver': 'driver',
+            'GapToLeader': 'gap_to_leader'
+        })
+    
+    # Convert gap timedeltas to seconds if needed
+    if 'gap_to_leader' in df.columns and hasattr(df['gap_to_leader'].iloc[0], 'total_seconds'):
+        df['gap_to_leader'] = df['gap_to_leader'].dt.total_seconds()
+    
     fig = px.line(
-        laps_df,
+        df,
         x="lap",
         y="gap_to_leader",
         color="driver",

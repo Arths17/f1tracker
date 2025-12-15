@@ -19,8 +19,18 @@ import streamlit as st
 # Initialize database tables (lazy load to avoid circular imports)
 @st.cache_resource
 def init_database():
-    from app.database import Base, engine
+    import importlib.util
     try:
+        # Load database module directly from file
+        spec = importlib.util.spec_from_file_location(
+            "database",
+            str(Path(__file__).parent.parent / "app" / "database.py")
+        )
+        db_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(db_module)
+        
+        Base = db_module.Base
+        engine = db_module.engine
         Base.metadata.create_all(bind=engine)
         return engine
     except Exception as e:
